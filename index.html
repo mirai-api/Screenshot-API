@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Screenshot Demo</title>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .wrap {
+      width: min(1100px, 100%);
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      background: #fff;
+    }
+
+    .title {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0.2px;
+    }
+    .title .hint {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .form {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 14px;
+      align-items: start;
+    }
+
+    .left, .right {
+      display: grid;
+      gap: 10px;
+    }
+
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      outline: none;
+      font-size: 14px;
+      color: var(--text);
+      background: #fff;
+    }
+    input:focus, select:focus {
+      border-color: #94a3b8;
+    }
+
+    .urlRow {
+      display: grid;
+      grid-template-columns: 1fr 160px;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-start;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: #0f172a;
+      color: #fff;
+      padding: 11px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .status {
+      font-size: 13px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+      min-height: 22px;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border);
+      border-top-color: #0f172a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .preview {
+      display: none;
+      grid-column: 1 / 2;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .preview h2 {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .previewHint {
+      font-weight: 500;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .shotFrame {
+      width: 100%;
+      height: 520px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #fff;
+      overflow: hidden;
+      position: relative;
+      cursor: zoom-in;
+    }
+
+    .shotFrame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+      background: #fff;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .hint a {
+      color: #0f172a;
+      text-decoration: underline;
+    }
+    .hint a:hover {
+      text-decoration: none;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(2,6,23,0.55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 50;
+    }
+    .modal {
+      width: min(520px, 100%);
+      background: #fff;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    .modal h3 { margin: 0 0 8px 0; font-size: 16px; }
+    .modal p { margin: 0 0 12px 0; color: var(--muted); font-size: 14px; line-height: 1.4; }
+    .modal .actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .modal .actions button {
+      background: #fff;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(2,6,23,0.85);
+      display: none;
+      z-index: 60;
+    }
+
+    .lightboxTop {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .lbTitle {
+      color: #fff;
+      font-size: 13px;
+      opacity: 0.9;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .lbControls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .lbBtn {
+      appearance: none;
+      border: 1px solid rgba(226,232,240,0.35);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14px;
+      backdrop-filter: blur(6px);
+    }
+    .lbBtn:hover { background: rgba(255,255,255,0.12); }
+
+    .lbCanvas {
+      position: absolute;
+      inset: 70px 14px 14px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(226,232,240,0.18);
+      overflow: hidden;
+      background: rgba(255,255,255,0.04);
+      display: grid;
+      place-items: center;
+    }
+
+    .lbViewport {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      cursor: grab;
+    }
+    .lbViewport:active { cursor: grabbing; }
+
+    .lbViewportInner {
+      min-width: 100%;
+      min-height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .lbViewport img {
+      transform-origin: center center;
+      user-select: none;
+      -webkit-user-drag: none;
+      max-width: none;
+      max-height: none;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+    }
+
+    @media (max-width: 920px) {
+      .form { grid-template-columns: 1fr; }
+      .urlRow { grid-template-columns: 1fr; }
+      .shotFrame { height: 420px; }
+      .lbCanvas { inset: 86px 10px 10px 10px; }
+      .preview { grid-column: 1 / -1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="title">
+        <h1>Screenshot Demo</h1>
+        <div class="hint">Enter URL + RapidAPI headers, then generate a screenshot.</div>
+      </div>
+
+      <form id="shotForm" class="form">
+        <div class="left">
+          <div class="urlRow">
+            <label>
+              Target URL
+              <input id="urlInput" type="url" placeholder="https://example.com" autocomplete="off" required />
+            </label>
+
+            <label>
+              Device
+              <select id="deviceInput" required>
+                <option value="desktop" selected>Desktop</option>
+                <option value="phone">Phone</option>
+                <option value="tablet">Tablet</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="row">
+            <button id="submitBtn" type="submit">Generate screenshot</button>
+            <div class="status">
+              <div id="spinner" class="spinner"></div>
+              <span id="statusText">Idle.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="right">
+          <label>
+            X-RapidAPI-Host
+            <input id="hostInput" type="text" value="screenshot-api8.p.rapidapi.com" autocomplete="off" required />
+          </label>
+
+          <label>
+            X-RapidAPI-Key
+            <input id="keyInput" type="password" placeholder="{RAPIDAPI_KEY}" autocomplete="off" required />
+          </label>
+
+          <div class="hint" style="margin-top:4px;">
+            These two fields are required to call the API via RapidAPI.
+            <div style="margin-top:10px;">
+              Get your RapidAPI key here:
+              <a href="https://rapidapi.com/apimirai/api/screenshot-api8/" target="_blank" rel="noreferrer">rapidapi.com/apimirai/api/screenshot-api8</a>
+            </div>
+          </div>
+        </div>
+
+        <div id="preview" class="preview">
+          <h2>
+            Result
+            <span class="previewHint">Click the preview to open a full viewer (zoom in/out).</span>
+          </h2>
+          <div id="shotFrame" class="shotFrame" title="Click to open viewer">
+            <img id="previewImg" alt="Screenshot preview" />
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="modalBackdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal">
+      <h3>Something went wrong</h3>
+      <p id="modalMessage">Unknown error.</p>
+      <div class="actions">
+        <button id="modalCloseBtn" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="lightbox" class="lightbox" aria-hidden="true">
+    <div class="lightboxTop">
+      <div class="lbTitle">
+        <span>Viewer</span>
+        <span style="opacity:.7;">•</span>
+        <span style="opacity:.85;">Use buttons or Ctrl/⌘ + mouse wheel</span>
+      </div>
+
+      <div class="lbControls">
+        <button class="lbBtn" id="zoomOutBtn" type="button">−</button>
+        <button class="lbBtn" id="zoomResetBtn" type="button">Reset</button>
+        <button class="lbBtn" id="zoomInBtn" type="button">+</button>
+        <button class="lbBtn" id="closeViewerBtn" type="button">Close</button>
+      </div>
+    </div>
+
+    <div class="lbCanvas">
+      <div id="lbViewport" class="lbViewport">
+        <div class="lbViewportInner">
+          <img id="lbImg" alt="Full screenshot" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const form = $("shotForm");
+    const urlInput = $("urlInput");
+    const deviceInput = $("deviceInput");
+    const hostInput = $("hostInput");
+    const keyInput  = $("keyInput");
+    const submitBtn = $("submitBtn");
+
+    const spinner = $("spinner");
+    const statusText = $("statusText");
+
+    const preview = $("preview");
+    const previewImg = $("previewImg");
+    const shotFrame = $("shotFrame");
+
+    const modalBackdrop = $("modalBackdrop");
+    const modalMessage = $("modalMessage");
+    const modalCloseBtn = $("modalCloseBtn");
+
+    const lightbox = $("lightbox");
+    const lbImg = $("lbImg");
+    const lbViewport = $("lbViewport");
+    const zoomOutBtn = $("zoomOutBtn");
+    const zoomResetBtn = $("zoomResetBtn");
+    const zoomInBtn = $("zoomInBtn");
+    const closeViewerBtn = $("closeViewerBtn");
+
+    const LS_KEY = "rapidapi_key_screenshot_demo";
+
+    function setLoading(isLoading, msg) {
+      spinner.style.display = isLoading ? "inline-block" : "none";
+      submitBtn.disabled = isLoading;
+      statusText.textContent = msg || (isLoading ? "Working..." : "Idle.");
+    }
+
+    function showModal(message) {
+      modalMessage.textContent = message || "Unknown error.";
+      modalBackdrop.style.display = "flex";
+      modalBackdrop.setAttribute("aria-hidden", "false");
+    }
+
+    function hideModal() {
+      modalBackdrop.style.display = "none";
+      modalBackdrop.setAttribute("aria-hidden", "true");
+    }
+
+    modalCloseBtn.addEventListener("click", hideModal);
+    modalBackdrop.addEventListener("click", (e) => {
+      if (e.target === modalBackdrop) hideModal();
+    });
+
+    function validateInputs() {
+      const url = urlInput.value.trim();
+      const device = deviceInput.value;
+      const host = hostInput.value.trim();
+      const key = keyInput.value.trim();
+
+      if (!url) return { ok: false, msg: "Please enter a URL." };
+      if (!host) return { ok: false, msg: "Please fill X-RapidAPI-Host." };
+      if (!key)  return { ok: false, msg: "Please fill X-RapidAPI-Key." };
+
+      try {
+        const u = new URL(url);
+        if (u.protocol !== "http:" && u.protocol !== "https:") {
+          return { ok: false, msg: "URL must start with http:// or https://." };
+        }
+      } catch (_) {
+        return { ok: false, msg: "Invalid URL format." };
+      }
+
+      if (!["desktop", "phone", "tablet"].includes(device)) {
+        return { ok: false, msg: "Invalid device value." };
+      }
+
+      return { ok: true, url, device, host, key };
+    }
+
+    async function apiCreate({ url, device, host, key }) {
+      const endpoint = `https://${host}/create`;
+      const payload = {
+        url,
+        device,
+        format: "webp",
+        full_page: false
+      };
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-RapidAPI-Host": host,
+          "X-RapidAPI-Key": key
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json().catch(() => null);
+      return data;
+    }
+
+    async function apiResult({ id, host, key }) {
+      const endpoint = `https://${host}/result?id=${encodeURIComponent(id)}`;
+
+      const res = await fetch(endpoint, {
+        method: "GET",
+        headers: {
+          "X-RapidAPI-Host": host,
+          "X-RapidAPI-Key": key
+        }
+      });
+
+      const data = await res.json().catch(() => null);
+      return data;
+    }
+
+    let lastImageDataUrl = "";
+    function showImageFromBase64(contentType, b64) {
+      const dataUrl = `data:${contentType};base64,${b64}`;
+      lastImageDataUrl = dataUrl;
+
+      previewImg.src = dataUrl;
+      preview.style.display = "block";
+    }
+
+    async function pollResult({ taskId, host, key }) {
+      const maxAttempts = 30;
+      const delayMs = 1000;
+
+      await new Promise(r => setTimeout(r, delayMs));
+
+      for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        setLoading(true, `Waiting for result... (${attempt}/${maxAttempts})`);
+
+        const r = await apiResult({ id: taskId, host, key });
+        if (!r || typeof r !== "object") {
+          throw new Error("Invalid response from /result.");
+        }
+
+        if (r.status === "done") {
+          if (!r.content_type || !r.image_base64) {
+            throw new Error("Result is done, but image data is missing.");
+          }
+          showImageFromBase64(r.content_type, r.image_base64);
+          return;
+        }
+
+        if (r.status === "error") {
+          throw new Error(r.error || "Screenshot failed.");
+        }
+
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+
+      throw new Error("Timed out while waiting for the screenshot result.");
+    }
+
+    function persistKey(value) {
+      try { localStorage.setItem(LS_KEY, value || ""); } catch (_) {}
+    }
+
+    function restoreKey() {
+      try {
+        const v = localStorage.getItem(LS_KEY);
+        if (v && typeof v === "string") keyInput.value = v;
+      } catch (_) {}
+    }
+
+    keyInput.addEventListener("input", () => persistKey(keyInput.value));
+    restoreKey();
+
+    let zoom = 1;
+    const ZOOM_MIN = 0.2;
+    const ZOOM_MAX = 6;
+
+    function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
+    function applyZoom() {
+      lbImg.style.transform = `scale(${zoom})`;
+    }
+
+    function openViewer() {
+      if (!lastImageDataUrl) return;
+      lbImg.src = lastImageDataUrl;
+      zoom = 1;
+      applyZoom();
+      lightbox.style.display = "block";
+      lightbox.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      requestAnimationFrame(() => {
+        lbViewport.scrollTop = 0;
+        lbViewport.scrollLeft = 0;
+      });
+    }
+
+    function closeViewer() {
+      lightbox.style.display = "none";
+      lightbox.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      lbImg.removeAttribute("src");
+    }
+
+    shotFrame.addEventListener("click", () => openViewer());
+
+    closeViewerBtn.addEventListener("click", closeViewer);
+    lightbox.addEventListener("click", (e) => {
+      if (e.target === lightbox) closeViewer();
+    });
+
+    zoomInBtn.addEventListener("click", () => {
+      zoom = clamp(zoom * 1.2, ZOOM_MIN, ZOOM_MAX);
+      applyZoom();
+    });
+
+    zoomOutBtn.addEventListener("click", () => {
+      zoom = clamp(zoom / 1.2, ZOOM_MIN, ZOOM_MAX);
+      applyZoom();
+    });
+
+    zoomResetBtn.addEventListener("click", () => {
+      zoom = 1;
+      applyZoom();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (lightbox.style.display !== "block") return;
+      if (e.key === "Escape") closeViewer();
+      if ((e.ctrlKey || e.metaKey) && (e.key === "+" || e.key === "=")) {
+        e.preventDefault();
+        zoom = clamp(zoom * 1.2, ZOOM_MIN, ZOOM_MAX);
+        applyZoom();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "-") {
+        e.preventDefault();
+        zoom = clamp(zoom / 1.2, ZOOM_MIN, ZOOM_MAX);
+        applyZoom();
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "0") {
+        e.preventDefault();
+        zoom = 1;
+        applyZoom();
+      }
+    });
+
+    lbViewport.addEventListener("wheel", (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      e.preventDefault();
+      const dir = e.deltaY < 0 ? 1 : -1;
+      const factor = dir > 0 ? 1.12 : 1 / 1.12;
+      zoom = clamp(zoom * factor, ZOOM_MIN, ZOOM_MAX);
+      applyZoom();
+    }, { passive: false });
+
+    let isPanning = false;
+    let panStartX = 0, panStartY = 0, scrollStartLeft = 0, scrollStartTop = 0;
+
+    lbViewport.addEventListener("mousedown", (e) => {
+      if (e.button !== 0) return;
+      isPanning = true;
+      panStartX = e.clientX;
+      panStartY = e.clientY;
+      scrollStartLeft = lbViewport.scrollLeft;
+      scrollStartTop = lbViewport.scrollTop;
+      lbViewport.style.cursor = "grabbing";
+    });
+
+    window.addEventListener("mouseup", () => {
+      isPanning = false;
+      if (lightbox.style.display === "block") lbViewport.style.cursor = "grab";
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (!isPanning) return;
+      const dx = e.clientX - panStartX;
+      const dy = e.clientY - panStartY;
+      lbViewport.scrollLeft = scrollStartLeft - dx;
+      lbViewport.scrollTop = scrollStartTop - dy;
+    });
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      preview.style.display = "none";
+      previewImg.removeAttribute("src");
+      lastImageDataUrl = "";
+
+      const v = validateInputs();
+      if (!v.ok) {
+        showModal(v.msg);
+        return;
+      }
+
+      persistKey(v.key);
+
+      try {
+        setLoading(true, "Creating task...");
+
+        const created = await apiCreate(v);
+        if (!created || typeof created !== "object") {
+          throw new Error("Invalid response from /create.");
+        }
+
+        if (created.status !== "accepted" || !created.task_id) {
+          const msg = created.error || "Task was not accepted.";
+          throw new Error(msg);
+        }
+
+        setLoading(true, "Task accepted. Fetching result...");
+        await pollResult({ taskId: created.task_id, host: v.host, key: v.key });
+
+        setLoading(false, "Done.");
+      } catch (err) {
+        setLoading(false, "Failed.");
+        showModal(err?.message || "Unknown error.");
+      }
+    });
+  </script>
+</body>
+</html>
